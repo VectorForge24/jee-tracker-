@@ -13,7 +13,7 @@ export function useDriveSync() {
     onSuccess: (tokenResponse) => {
       console.log("✅ GOOGLE LOGIN SUCCESS! Token received.");
       setToken(tokenResponse.access_token);
-      setIsLoggedIn(true); // Ye line teri app me GDrive ko 'Active' dikhayegi
+      setIsLoggedIn(true); 
     },
     onError: (error) => {
       console.error('❌ GOOGLE LOGIN FAILED:', error);
@@ -35,7 +35,7 @@ export function useDriveSync() {
     setIsSyncing(true);
 
     try {
-      // Pura local storage data collect karo
+      // Collect local storage data
       const dataToSave = {};
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -45,7 +45,7 @@ export function useDriveSync() {
       const fileContent = JSON.stringify(dataToSave);
       const metadata = { name: FILE_NAME, parents: ['appDataFolder'] };
 
-      // Step A: Check if file already exists in Drive
+      // Check if file exists
       const searchRes = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${FILE_NAME}'`, {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
@@ -57,12 +57,11 @@ export function useDriveSync() {
         fileId = searchData.files[0].id;
       }
 
-      // Step B: Prepare upload data
       const form = new FormData();
       form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
       form.append('file', new Blob([fileContent], { type: 'application/json' }));
 
-      // Step C: If file exists, update it (PATCH). If not, create new (POST).
+      // Create new (POST) or Update existing (PATCH)
       const url = fileId 
         ? `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`
         : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
