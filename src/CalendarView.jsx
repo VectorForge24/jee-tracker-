@@ -86,7 +86,6 @@ export default function CalendarView({ themeToggle, timerIsland }) {
     return `${String(d.getHours()).padStart(2, '0')}:00:00`;
   };
 
-  // NEW 9 SOLID COLORS FOR TASK SELECTION
   const TASK_COLORS = {
     red: { bg: '#ef4444', border: '#b91c1c', text: '#ffffff' },
     orange: { bg: '#f97316', border: '#c2410c', text: '#ffffff' },
@@ -105,7 +104,7 @@ export default function CalendarView({ themeToggle, timerIsland }) {
   const [taskName, setTaskName] = useState('');
   const [startTime, setStartTime] = useState('08:00');
   const [endTime, setEndTime] = useState('10:00');
-  const [taskColorKey, setTaskColorKey] = useState('blue'); // Replaced priority with this
+  const [taskColorKey, setTaskColorKey] = useState('blue');
   const [subject, setSubject] = useState('Physics');
   const [linkedChapterTitle, setLinkedChapterTitle] = useState(''); 
 
@@ -254,7 +253,6 @@ export default function CalendarView({ themeToggle, timerIsland }) {
       );
     }
     
-    // WEEKLY/DAILY VIEW TILE - z-20 added to override grids, solid bg used
     const s = eventInfo.event.start ? eventInfo.event.start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true}) : '';
     const e = eventInfo.event.end ? eventInfo.event.end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: true}) : '';
     return (
@@ -274,7 +272,6 @@ export default function CalendarView({ themeToggle, timerIsland }) {
     const isToday = dateStr === todayStr;
     const allCompleted = dayMocks.length > 0 && dayMocks.every(m => m.isCompleted);
 
-    // FIX: Grayscale removed, opacity used so blinking dot stays colored!
     return (
       <div className={`flex justify-between items-start w-full h-full p-1 cursor-pointer group transition-all duration-300 ${isPast ? 'bg-slate-50/10 dark:bg-slate-800/20 opacity-50 hover:opacity-100' : ''}`} onClick={() => triggerDailyModal(dateStr)}>
         <div className="flex flex-col items-start pt-1 pl-1">
@@ -349,6 +346,11 @@ export default function CalendarView({ themeToggle, timerIsland }) {
        )}
     </div>
   );
+
+  // SAFE PRE-CALCULATIONS (Removed IIFE structure that crashes bundlers)
+  const taskDateObj = selectedDate ? new Date(selectedDate) : currentRenderDate;
+  const taskMonthKey = `${taskDateObj.getFullYear()}-${String(taskDateObj.getMonth() + 1).padStart(2, '0')}`;
+  const availableChapters = chapters.filter(c => c.monthKey === taskMonthKey && c.subject === subject);
 
   return (
     <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl h-full w-full flex flex-col transition-colors duration-300 relative rounded-[32px] shadow-2xl border border-white/20 overflow-hidden mb-2 mr-2">
@@ -545,19 +547,17 @@ export default function CalendarView({ themeToggle, timerIsland }) {
 
         {/* RIGHT CALENDAR */}
         <div className="custom-calendar relative p-4 h-full overflow-hidden flex flex-col z-0">
-          {/* OVERRIDE CSS: Z-INDEX 10 ADDED TO EVENTS TO HIDE GRID LINES */}
           <style>{`
             .custom-calendar .fc { --fc-border-color: rgba(148, 163, 184, 0.2); --fc-button-bg-color: rgba(59, 130, 246, 0.1); --fc-button-border-color: transparent; --fc-button-hover-bg-color: rgba(59, 130, 246, 0.2); --fc-button-active-bg-color: rgba(59, 130, 246, 0.3); --fc-today-bg-color: rgba(59, 130, 246, 0.05); height: 100%;}
             .custom-calendar .fc-toolbar-title { font-size: 1.25rem; font-weight: 800; color: inherit; }
             .custom-calendar .fc-col-header-cell { padding: 12px 0; font-size: 0.8rem; text-transform: uppercase; font-weight: 800; opacity: 0.7; }
             .custom-calendar .fc-daygrid-day-number { width: 100%; padding: 0; }
             
-            .custom-calendar .fc-daygrid-day-top { display: flex !important; flex-direction: row; justify-content: space-between; width: 100%; margin-bottom: 0px; }
+            .custom-calendar .fc-daygrid-day-top { display: flex !important; flex-direction: row; justify-content: space-between; width: 100%; margin-bottom: 6px; }
             
-            .custom-calendar .fc-timegrid-event { z-index: 10 !important; }
             .custom-calendar .fc-daygrid-event-harness { margin-top: 4px; }
-            .custom-calendar .fc-event { background: transparent !important; border: none; padding: 0; margin-bottom: 4px !important; overflow: hidden; }
-            .custom-calendar .fc-daygrid-day-events { padding: 0 4px !important; }
+            .custom-calendar .fc-event { background: transparent; border: none; padding: 0; margin-bottom: 4px !important; }
+            .custom-calendar .fc-daygrid-day-events { padding: 0 6px !important; }
             .fc-scrollgrid-sync-table { height: 100% !important; }
             .fc-view-harness { flex-grow: 1; overflow: hidden; }
             
@@ -762,96 +762,90 @@ export default function CalendarView({ themeToggle, timerIsland }) {
       )}
 
       {/* TASK MODAL WITH 9 COLORS */}
-      {isModalOpen && (() => {
-        const taskDateObj = selectedDate ? new Date(selectedDate) : currentRenderDate;
-        const taskMonthKey = `${taskDateObj.getFullYear()}-${String(taskDateObj.getMonth() + 1).padStart(2, '0')}`;
-        const availableChapters = chapters.filter(c => c.monthKey === taskMonthKey && c.subject === subject);
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[99999] flex justify-center items-center p-4">
+          <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-3xl w-full max-w-md rounded-[32px] p-8 shadow-2xl border border-white/20 dark:border-white/10 text-slate-800 dark:text-white relative max-h-[90vh] overflow-y-auto hide-scrollbar">
+            <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors"><X size={24} /></button>
+            <h3 className="text-2xl font-black mb-8 tracking-tight flex items-center gap-3"><CalIcon className="text-blue-500"/> {editingId ? 'Edit Task' : 'New Task'}</h3>
+            
+            <div className="mb-6">
+              <input type="text" placeholder="Task Name (e.g. Solve Irodov)" value={taskName} onChange={(e) => setTaskName(e.target.value)} className="w-full bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-slate-900 dark:text-white placeholder:text-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" />
+            </div>
 
-        return (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[99999] flex justify-center items-center p-4">
-            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-3xl w-full max-w-md rounded-[32px] p-8 shadow-2xl border border-white/20 dark:border-white/10 text-slate-800 dark:text-white relative max-h-[90vh] overflow-y-auto hide-scrollbar">
-              <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors"><X size={24} /></button>
-              <h3 className="text-2xl font-black mb-8 tracking-tight flex items-center gap-3"><CalIcon className="text-blue-500"/> {editingId ? 'Edit Task' : 'New Task'}</h3>
-              
-              <div className="mb-6">
-                <input type="text" placeholder="Task Name (e.g. Solve Irodov)" value={taskName} onChange={(e) => setTaskName(e.target.value)} className="w-full bg-slate-100/80 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-4 text-slate-900 dark:text-white placeholder:text-slate-400 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" />
-              </div>
-
-              <div className="flex bg-slate-50/50 dark:bg-slate-800/30 rounded-3xl p-4 mb-6 border border-slate-200 dark:border-slate-700/50 h-[150px]">
-                <div className="flex-1 flex flex-col items-center">
-                  <span className="text-[11px] font-black text-slate-400 tracking-[0.2em] mb-2">START</span>
-                  <div className="w-full overflow-y-auto snap-y snap-mandatory hide-scrollbar flex-1 relative">
-                    <div className="h-[40px]"></div>
-                    {TIME_OPTIONS.map(time => (<div key={`start-${time}`} onClick={() => setStartTime(time)} className={`h-[40px] flex items-center justify-center snap-center cursor-pointer transition-all ${startTime === time ? 'text-blue-600 dark:text-white text-xl font-black bg-white dark:bg-white/10 rounded-xl shadow-sm border border-slate-200 dark:border-transparent' : 'text-slate-400 text-sm font-bold hover:text-slate-600 dark:hover:text-slate-300'}`}>{time}</div>))}
-                    <div className="h-[40px]"></div>
-                  </div>
-                </div>
-                <div className="w-px bg-slate-200 dark:bg-slate-700 mx-4 my-4"></div>
-                <div className="flex-1 flex flex-col items-center">
-                  <span className="text-[11px] font-black text-slate-400 tracking-[0.2em] mb-2">END</span>
-                  <div className="w-full overflow-y-auto snap-y snap-mandatory hide-scrollbar flex-1 relative">
-                    <div className="h-[40px]"></div>
-                    {TIME_OPTIONS.map(time => (<div key={`end-${time}`} onClick={() => setEndTime(time)} className={`h-[40px] flex items-center justify-center snap-center cursor-pointer transition-all ${endTime === time ? 'text-blue-600 dark:text-white text-xl font-black bg-white dark:bg-white/10 rounded-xl shadow-sm border border-slate-200 dark:border-transparent' : 'text-slate-400 text-sm font-bold hover:text-slate-600 dark:hover:text-slate-300'}`}>{time}</div>))}
-                    <div className="h-[40px]"></div>
-                  </div>
+            <div className="flex bg-slate-50/50 dark:bg-slate-800/30 rounded-3xl p-4 mb-6 border border-slate-200 dark:border-slate-700/50 h-[150px]">
+              <div className="flex-1 flex flex-col items-center">
+                <span className="text-[11px] font-black text-slate-400 tracking-[0.2em] mb-2">START</span>
+                <div className="w-full overflow-y-auto snap-y snap-mandatory hide-scrollbar flex-1 relative">
+                  <div className="h-[40px]"></div>
+                  {TIME_OPTIONS.map(time => (<div key={`start-${time}`} onClick={() => setStartTime(time)} className={`h-[40px] flex items-center justify-center snap-center cursor-pointer transition-all ${startTime === time ? 'text-blue-600 dark:text-white text-xl font-black bg-white dark:bg-white/10 rounded-xl shadow-sm border border-slate-200 dark:border-transparent' : 'text-slate-400 text-sm font-bold hover:text-slate-600 dark:hover:text-slate-300'}`}>{time}</div>))}
+                  <div className="h-[40px]"></div>
                 </div>
               </div>
-
-              <div className="mb-6">
-                <label className="text-[11px] font-black text-slate-400 tracking-widest uppercase mb-3 block">Subject</label>
-                <div className="flex gap-2">
-                  {['Physics', 'Chemistry', 'Mathematics'].map(sub => (
-                    <button type="button" key={sub} onClick={() => { setSubject(sub); setLinkedChapterTitle(''); }} className={`flex-1 py-3 rounded-2xl text-xs font-extrabold border transition-colors ${subject === sub ? 'bg-blue-500/20 border-blue-500 text-blue-600 dark:text-blue-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-                      {sub === 'Mathematics' ? 'Maths' : sub}
-                    </button>
-                  ))}
+              <div className="w-px bg-slate-200 dark:bg-slate-700 mx-4 my-4"></div>
+              <div className="flex-1 flex flex-col items-center">
+                <span className="text-[11px] font-black text-slate-400 tracking-[0.2em] mb-2">END</span>
+                <div className="w-full overflow-y-auto snap-y snap-mandatory hide-scrollbar flex-1 relative">
+                  <div className="h-[40px]"></div>
+                  {TIME_OPTIONS.map(time => (<div key={`end-${time}`} onClick={() => setEndTime(time)} className={`h-[40px] flex items-center justify-center snap-center cursor-pointer transition-all ${endTime === time ? 'text-blue-600 dark:text-white text-xl font-black bg-white dark:bg-white/10 rounded-xl shadow-sm border border-slate-200 dark:border-transparent' : 'text-slate-400 text-sm font-bold hover:text-slate-600 dark:hover:text-slate-300'}`}>{time}</div>))}
+                  <div className="h-[40px]"></div>
                 </div>
-              </div>
-
-              <div className="mb-8">
-                <label className="text-[11px] font-black text-slate-400 tracking-widest uppercase mb-3 flex justify-between">
-                  <span>Linked Chapter</span>
-                  <span className="text-slate-400 normal-case font-semibold tracking-normal">Optional</span>
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {availableChapters.length === 0 ? (
-                    <div className="w-full text-center p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 text-xs text-slate-500 font-bold">
-                      No {subject} chapters mapped for this month. Add from sidebar!
-                    </div>
-                  ) : (
-                    availableChapters.map(ch => (
-                      <button type="button" key={ch.id} onClick={() => setLinkedChapterTitle(linkedChapterTitle === ch.title ? '' : ch.title)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${linkedChapterTitle === ch.title ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/50 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/50 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
-                        {ch.title}
-                      </button>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div className="mb-10">
-                <label className="text-[11px] font-black text-slate-400 tracking-widest uppercase mb-3 block">Task Color</label>
-                <div className="flex flex-wrap gap-3">
-                  {Object.entries(TASK_COLORS).map(([key, vals]) => (
-                    <button 
-                      type="button" 
-                      key={key} 
-                      onClick={() => setTaskColorKey(key)} 
-                      className={`w-8 h-8 rounded-full shadow-sm transition-all border-2 ${taskColorKey === key ? 'ring-4 ring-offset-2 dark:ring-offset-[#0f172a] scale-110' : 'hover:scale-110 opacity-70 hover:opacity-100'}`} 
-                      style={{ backgroundColor: vals.bg, borderColor: vals.border }}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <button type="button" onClick={handleSaveTask} className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-extrabold py-4 px-6 rounded-2xl transition-transform active:scale-95 shadow-lg shadow-blue-500/30">
-                  {editingId ? 'Save Changes' : 'Create Task'}
-                </button>
               </div>
             </div>
+
+            <div className="mb-6">
+              <label className="text-[11px] font-black text-slate-400 tracking-widest uppercase mb-3 block">Subject</label>
+              <div className="flex gap-2">
+                {['Physics', 'Chemistry', 'Mathematics'].map(sub => (
+                  <button type="button" key={sub} onClick={() => { setSubject(sub); setLinkedChapterTitle(''); }} className={`flex-1 py-3 rounded-2xl text-xs font-extrabold border transition-colors ${subject === sub ? 'bg-blue-500/20 border-blue-500 text-blue-600 dark:text-blue-400 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                    {sub === 'Mathematics' ? 'Maths' : sub}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-8">
+              <label className="text-[11px] font-black text-slate-400 tracking-widest uppercase mb-3 flex justify-between">
+                <span>Linked Chapter</span>
+                <span className="text-slate-400 normal-case font-semibold tracking-normal">Optional</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {availableChapters.length === 0 ? (
+                  <div className="w-full text-center p-4 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 text-xs text-slate-500 font-bold">
+                    No {subject} chapters mapped for this month. Add from sidebar!
+                  </div>
+                ) : (
+                  availableChapters.map(ch => (
+                    <button type="button" key={ch.id} onClick={() => setLinkedChapterTitle(linkedChapterTitle === ch.title ? '' : ch.title)} className={`px-4 py-2 rounded-full text-xs font-bold transition-all border ${linkedChapterTitle === ch.title ? 'bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border-indigo-500/50 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/50 text-slate-500 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'}`}>
+                      {ch.title}
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="mb-10">
+              <label className="text-[11px] font-black text-slate-400 tracking-widest uppercase mb-3 block">Task Color</label>
+              <div className="flex flex-wrap gap-3">
+                {Object.entries(TASK_COLORS).map(([key, vals]) => (
+                  <button 
+                    type="button" 
+                    key={key} 
+                    onClick={() => setTaskColorKey(key)} 
+                    className={`w-8 h-8 rounded-full shadow-sm transition-all border-2 ${taskColorKey === key ? 'ring-4 ring-offset-2 dark:ring-offset-[#0f172a] scale-110' : 'hover:scale-110 opacity-70 hover:opacity-100'}`} 
+                    style={{ backgroundColor: vals.bg, borderColor: vals.border }}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <button type="button" onClick={handleSaveTask} className="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-extrabold py-4 px-6 rounded-2xl transition-transform active:scale-95 shadow-lg shadow-blue-500/30">
+                {editingId ? 'Save Changes' : 'Create Task'}
+              </button>
+            </div>
           </div>
-        )
-      })()}
+        </div>
+      )}
 
       {/* TILE CLICK MODAL WITH SEPARATORS */}
       {dailyModal.isOpen && (
