@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sun, Moon, Clock, Play, Pause, RotateCcw, X, Settings, Image as ImageIcon, Trash2, SunDim, Upload, Download, CheckCircle, Save, Plus } from 'lucide-react';
+import { Sun, Moon, Clock, Play, Pause, RotateCcw, X, Settings, Image as ImageIcon, Trash2, SunDim, Upload, Download, CheckCircle, Save } from 'lucide-react';
 import CalendarView from './CalendarView';
 import SyllabusView from './SyllabusView';
 import ProgressView from './ProgressView';
@@ -61,7 +61,7 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [islandState, setIslandState] = useState('hidden');
 
-  // DRIVE SYNC & INTERCEPTOR
+  // DRIVE SYNC
   const { isLoggedIn, token, loginWithGoogle, logoutGoogle, saveToDrive, isSyncing } = useDriveSync();
 
   useEffect(() => {
@@ -82,7 +82,6 @@ export default function App() {
     };
   }, [isLoggedIn, token, saveToDrive]);
 
-  // LOCAL IMPORT / EXPORT LOGIC
   const handleLocalExport = () => {
     const data = {};
     for (let i = 0; i < localStorage.length; i++) {
@@ -241,8 +240,8 @@ export default function App() {
       >
         {!bgImage && (
           <div className="absolute inset-0 overflow-hidden pointer-events-none z-0" style={{ opacity: colorIntensity / 100 }}>
-            <div className={`absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full blur-[100px] transition-colors duration-1000`} style={{ backgroundColor: currentTheme.hex, opacity: isDark ? 0.2 : 0.4 }}></div>
-            <div className={`absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full blur-[100px] transition-colors duration-1000`} style={{ backgroundColor: currentTheme.hex, opacity: isDark ? 0.15 : 0.3 }}></div>
+            <div className={`absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] ${currentTheme.orb1} rounded-full blur-[100px] transition-colors duration-1000`}></div>
+            <div className={`absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] ${currentTheme.orb2} rounded-full blur-[100px] transition-colors duration-1000`}></div>
           </div>
         )}
 
