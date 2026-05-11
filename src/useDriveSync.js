@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 
 const FILE_NAME = 'jee_tracker_backup.json';
@@ -8,22 +8,30 @@ export function useDriveSync() {
   const [token, setToken] = useState(() => localStorage.getItem('gdrive_token') || null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const loginWithGoogle = useGoogleLogin({
-    onSuccess: (tokenResponse) => {
-      alert("✅ Google Login Successful! Syncing App..."); // Ye popup aana zaruri hai
-      const accessToken = tokenResponse.access_token;
-      setToken(accessToken);
-      setIsLoggedIn(true);
+  // 🚀 THE MAGIC: Catching the token from URL when Google redirects back!
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes('access_token=')) {
+      const params = new URLSearchParams(hash.replace('#', '?'));
+      const accessToken = params.get('access_token');
       
-      localStorage.setItem('gdrive_token', accessToken);
-      localStorage.setItem('gdrive_loggedin', 'true');
-    },
-    onError: (error) => {
-      alert("❌ Google Login Failed or Browser Blocked it!");
-      console.error('GOOGLE LOGIN FAILED:', error);
-    },
+      if (accessToken) {
+        setToken(accessToken);
+        setIsLoggedIn(true);
+        localStorage.setItem('gdrive_token', accessToken);
+        localStorage.setItem('gdrive_loggedin', 'true');
+        
+        // Clean up the URL so it looks normal again
+        window.history.replaceState(null, '', window.location.pathname);
+        console.log("✅ Token grabbed successfully without any popup!");
+      }
+    }
+  }, []);
+
+  const loginWithGoogle = useGoogleLogin({
+    // POPUPS ARE DEAD. We redirect the whole page now.
+    ux_mode: 'redirect', 
     scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file',
-    prompt: 'consent' // Forces Google to refresh auth token (Fixes silent fails)
   });
 
   const logoutGoogle = () => {
