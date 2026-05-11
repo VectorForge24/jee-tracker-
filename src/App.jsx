@@ -48,8 +48,6 @@ const THEMES = [
 export default function App() {
   const [activeTab, setActiveTab] = useState('calendar');
   const [isDark, setIsDark] = useState(() => localStorage.getItem('tracker-theme') === 'dark' || window.matchMedia('(prefers-color-scheme: dark)').matches);
-  
-  // NEW: Sidebar Shrink State
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -64,13 +62,19 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [islandState, setIslandState] = useState('hidden');
 
-  // DRIVE SYNC
   const { isLoggedIn, token, loginWithGoogle, logoutGoogle, saveToDrive, isSyncing } = useDriveSync();
+
+  // FULLCALENDAR RESIZE FIX (Runs dynamically when sidebar state changes)
+  useEffect(() => {
+    const triggerResize = () => window.dispatchEvent(new Event('resize'));
+    const t1 = setTimeout(triggerResize, 150); // Mid-transition
+    const t2 = setTimeout(triggerResize, 300); // End of transition
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [isSidebarOpen, activeTab]);
 
   useEffect(() => {
     if (!isLoggedIn) return;
     let syncTimeout;
-    
     const originalSetItem = localStorage.setItem;
     localStorage.setItem = function(key, value) {
       originalSetItem.apply(this, arguments);
@@ -248,9 +252,7 @@ export default function App() {
           </div>
         )}
 
-        {/* DYNAMIC SIDEBAR (Shrinkable) */}
         <nav className={`bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl flex flex-col py-8 z-10 hidden md:flex my-2 ml-2 shadow-2xl border border-white/20 rounded-[32px] overflow-hidden shrink-0 transition-all duration-300 ${isSidebarOpen ? 'w-64 px-4' : 'w-24 px-2 items-center'}`}>
-          
           <div className={`flex items-center w-full mb-10 ${isSidebarOpen ? 'justify-between px-2' : 'justify-center'}`}>
             {isSidebarOpen && <h1 className="text-xl font-extrabold text-blue-500 tracking-tight whitespace-nowrap overflow-hidden">JEE Tracker</h1>}
             <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-slate-200/50 dark:bg-slate-800/50 rounded-xl hover:bg-blue-500 hover:text-white transition-colors">
@@ -281,39 +283,25 @@ export default function App() {
         </main>
       </div>
 
-      {/* Settings Modal */}
       {isSettingsOpen && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[9999] flex justify-center items-center p-4">
           <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-3xl w-full max-w-md rounded-[32px] p-8 relative shadow-2xl border border-white/20 max-h-[90vh] overflow-y-auto hide-scrollbar">
             <button onClick={() => setIsSettingsOpen(false)} className="absolute top-6 right-6 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors"><X size={24} /></button>
-            
-            <h3 className="text-2xl font-black mb-8 text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
-              <Settings className="text-blue-500" /> Settings
-            </h3>
+            <h3 className="text-2xl font-black mb-8 text-slate-800 dark:text-white tracking-tight flex items-center gap-3"><Settings className="text-blue-500" /> Settings</h3>
             
             <div className="mb-6">
               <label className="text-xs font-extrabold text-slate-500 tracking-widest uppercase mb-3 block">Color Theme</label>
               <div className="flex flex-wrap gap-3">
                 {THEMES.map(theme => (
-                  <button 
-                    key={theme.id} 
-                    onClick={() => setActiveTheme(theme.id)}
-                    className={`w-8 h-8 rounded-full shadow-md transition-all ${activeTheme === theme.id ? `ring-4 ring-offset-2 dark:ring-offset-[#0f172a] ${theme.ring} scale-110` : 'hover:scale-110 opacity-60 hover:opacity-100'}`}
-                    style={{ backgroundColor: theme.hex }}
-                    title={theme.name}
-                  />
+                  <button key={theme.id} onClick={() => setActiveTheme(theme.id)} className={`w-8 h-8 rounded-full shadow-md transition-all ${activeTheme === theme.id ? `ring-4 ring-offset-2 dark:ring-offset-[#0f172a] ${theme.ring} scale-110` : 'hover:scale-110 opacity-60 hover:opacity-100'}`} style={{ backgroundColor: theme.hex }} title={theme.name} />
                 ))}
               </div>
             </div>
 
             {!bgImage && (
               <div className="mb-6">
-                <label className="text-xs font-extrabold text-slate-500 tracking-widest uppercase mb-3 flex items-center justify-between">
-                  <span className="flex items-center gap-2"><SunDim size={16} /> Orb Intensity</span>
-                  <span className="text-blue-500">{colorIntensity}%</span>
-                </label>
+                <label className="text-xs font-extrabold text-slate-500 tracking-widest uppercase mb-3 flex items-center justify-between"><span className="flex items-center gap-2"><SunDim size={16} /> Orb Intensity</span><span className="text-blue-500">{colorIntensity}%</span></label>
                 <input type="range" min="0" max="100" step="5" value={colorIntensity} onChange={(e) => setColorIntensity(Number(e.target.value))} className="w-full h-2 bg-slate-300 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-500" />
-                <p className="text-[10px] font-bold text-slate-500 mt-2">Adjust the glowing background color intensity.</p>
               </div>
             )}
 
@@ -322,48 +310,26 @@ export default function App() {
               <div className="flex items-center gap-4">
                 {bgImage && <img src={bgImage} alt="Wallpaper" className="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-md" />}
                 <div className="flex-1 flex flex-col gap-2">
-                  <label className="bg-blue-600/80 hover:bg-blue-500 text-white text-sm font-bold py-2 px-4 rounded-2xl cursor-pointer text-center transition-colors shadow-lg backdrop-blur-md">
-                    Upload Image
-                    <input type="file" accept="image/*" onChange={async (e) => { if(e.target.files[0]) setBgImage(await compressImage(e.target.files[0])); }} className="hidden" />
-                  </label>
+                  <label className="bg-blue-600/80 hover:bg-blue-500 text-white text-sm font-bold py-2 px-4 rounded-2xl cursor-pointer text-center transition-colors shadow-lg backdrop-blur-md">Upload Image<input type="file" accept="image/*" onChange={async (e) => { if(e.target.files[0]) setBgImage(await compressImage(e.target.files[0])); }} className="hidden" /></label>
                   {bgImage && <button onClick={() => setBgImage(null)} className="flex items-center justify-center gap-2 bg-red-500/20 text-red-500 text-sm font-bold py-2 px-4 rounded-2xl transition-colors hover:bg-red-500 hover:text-white"><Trash2 size={16} /> Remove</button>}
                 </div>
               </div>
             </div>
 
-            {/* CLOUD SYNC & LOCAL BACKUP */}
             <div className="mb-2 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-              <label className="text-xs font-extrabold text-slate-500 tracking-widest uppercase mb-3 flex items-center justify-between">
-                <span className="flex items-center gap-2"><Save size={16} className="text-emerald-500"/> Data Backup & Sync</span>
-                {isSyncing && <span className="text-[10px] bg-blue-500/20 text-blue-500 px-2 py-0.5 rounded-full animate-pulse">Syncing...</span>}
-              </label>
-
+              <label className="text-xs font-extrabold text-slate-500 tracking-widest uppercase mb-3 flex items-center justify-between"><span className="flex items-center gap-2"><Save size={16} className="text-emerald-500"/> Data Backup & Sync</span>{isSyncing && <span className="text-[10px] bg-blue-500/20 text-blue-500 px-2 py-0.5 rounded-full animate-pulse">Syncing...</span>}</label>
               <div className="flex flex-col gap-3">
-                {/* Drive Sync */}
                 {isLoggedIn ? (
-                  <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 p-3 rounded-2xl">
-                    <span className="text-sm font-bold text-green-600 dark:text-green-400 flex items-center gap-2"><CheckCircle size={16} /> GDrive Active</span>
-                    <button onClick={logoutGoogle} className="text-xs font-bold text-slate-500 hover:text-red-500">Disconnect</button>
-                  </div>
+                  <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 p-3 rounded-2xl"><span className="text-sm font-bold text-green-600 dark:text-green-400 flex items-center gap-2"><CheckCircle size={16} /> GDrive Active</span><button onClick={logoutGoogle} className="text-xs font-bold text-slate-500 hover:text-red-500">Disconnect</button></div>
                 ) : (
-                  <button onClick={() => loginWithGoogle()} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-3 transition-colors">
-                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" /> Auto-Sync with Google Drive
-                  </button>
+                  <button onClick={() => loginWithGoogle()} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-3 transition-colors"><img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" /> Auto-Sync with Google Drive</button>
                 )}
-
-                {/* Local Import/Export */}
                 <div className="grid grid-cols-2 gap-2 mt-2">
-                  <button onClick={handleLocalExport} className="flex items-center justify-center gap-2 bg-slate-200/50 dark:bg-slate-800/50 hover:bg-slate-300/50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300 text-xs font-bold py-2.5 rounded-xl transition-colors">
-                    <Download size={14} /> Export Backup
-                  </button>
-                  <label className="flex items-center justify-center gap-2 bg-slate-200/50 dark:bg-slate-800/50 hover:bg-slate-300/50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300 text-xs font-bold py-2.5 rounded-xl cursor-pointer transition-colors">
-                    <Upload size={14} /> Import Data
-                    <input type="file" accept=".json" onChange={handleLocalImport} className="hidden" />
-                  </label>
+                  <button onClick={handleLocalExport} className="flex items-center justify-center gap-2 bg-slate-200/50 dark:bg-slate-800/50 hover:bg-slate-300/50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300 text-xs font-bold py-2.5 rounded-xl transition-colors"><Download size={14} /> Export Backup</button>
+                  <label className="flex items-center justify-center gap-2 bg-slate-200/50 dark:bg-slate-800/50 hover:bg-slate-300/50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300 text-xs font-bold py-2.5 rounded-xl cursor-pointer transition-colors"><Upload size={14} /> Import Data<input type="file" accept=".json" onChange={handleLocalImport} className="hidden" /></label>
                 </div>
               </div>
             </div>
-            
           </div>
         </div>
       )}
