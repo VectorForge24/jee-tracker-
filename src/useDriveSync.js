@@ -4,28 +4,26 @@ import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 const FILE_NAME = 'jee_tracker_backup.json';
 
 export function useDriveSync() {
-  // Login status ab localStorage se yaad rakha jayega
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('gdrive_loggedin') === 'true');
   const [token, setToken] = useState(() => localStorage.getItem('gdrive_token') || null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Google Login Setup
   const loginWithGoogle = useGoogleLogin({
     onSuccess: (tokenResponse) => {
-      console.log("✅ GOOGLE LOGIN SUCCESS!", tokenResponse);
+      alert("✅ Google Login Successful! Syncing App..."); // Ye popup aana zaruri hai
       const accessToken = tokenResponse.access_token;
       setToken(accessToken);
       setIsLoggedIn(true);
       
-      // Token aur status ko browser memory me save kar rahe hain
       localStorage.setItem('gdrive_token', accessToken);
       localStorage.setItem('gdrive_loggedin', 'true');
     },
     onError: (error) => {
-      console.error('❌ GOOGLE LOGIN FAILED:', error);
-      alert("Login popup was blocked or failed! Try again.");
+      alert("❌ Google Login Failed or Browser Blocked it!");
+      console.error('GOOGLE LOGIN FAILED:', error);
     },
     scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file',
+    prompt: 'consent' // Forces Google to refresh auth token (Fixes silent fails)
   });
 
   const logoutGoogle = () => {
@@ -37,7 +35,6 @@ export function useDriveSync() {
     console.log("Logged out of Google Drive.");
   };
 
-  // Drive Sync Logic (Create or Update)
   const saveToDrive = useCallback(async (accessToken) => {
     if (!accessToken) return;
     setIsSyncing(true);
@@ -79,11 +76,7 @@ export function useDriveSync() {
         body: form
       });
 
-      if (uploadRes.ok) {
-        console.log("✅ Data successfully synced to Google Drive!");
-      } else {
-        console.error("❌ Sync failed with status:", uploadRes.status);
-      }
+      if (uploadRes.ok) console.log("✅ Data successfully synced to Google Drive!");
     } catch (error) {
       console.error("❌ Drive Sync Catch Error:", error);
     } finally {
