@@ -340,7 +340,7 @@ export default function App() {
                     <button onClick={logoutGoogle} className="text-xs font-bold text-slate-500 hover:text-red-500">Disconnect</button>
                   </div>
                 ) : (
-                  <button onClick={loginWithGoogle} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-3 transition-colors">
+                  <button onClick={() => loginWithGoogle} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-3 transition-colors">
                     <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" /> Auto-Sync with Google Drive
                   </button>
                 )}
