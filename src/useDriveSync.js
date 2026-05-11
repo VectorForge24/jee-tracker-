@@ -8,7 +8,7 @@ export function useDriveSync() {
   const [token, setToken] = useState(() => localStorage.getItem('gdrive_token') || null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // 🚀 THE MAGIC: Catching the token from URL when Google redirects back!
+  // 🚀 URL se token pakadne ka jaadu
   useEffect(() => {
     const hash = window.location.hash;
     if (hash.includes('access_token=')) {
@@ -21,16 +21,17 @@ export function useDriveSync() {
         localStorage.setItem('gdrive_token', accessToken);
         localStorage.setItem('gdrive_loggedin', 'true');
         
-        // Clean up the URL so it looks normal again
+        // URL ko clean kar dete hain taaki ganda na dikhe
         window.history.replaceState(null, '', window.location.pathname);
-        console.log("✅ Token grabbed successfully without any popup!");
+        console.log("✅ Token grabbed from URL successfully!");
       }
     }
   }, []);
 
   const loginWithGoogle = useGoogleLogin({
-    // POPUPS ARE DEAD. We redirect the whole page now.
-    ux_mode: 'redirect', 
+    ux_mode: 'redirect',
+    // 🔥 YAHI MISSING THA! Is link ke bina library chupke se popup khol rahi thi.
+    redirect_uri: 'https://jee-tracker-ten.vercel.app', 
     scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file',
   });
 
