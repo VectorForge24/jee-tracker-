@@ -1,14 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
-import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 
 const FILE_NAME = 'jee_tracker_backup.json';
+// EXACT VERCEL LINK
+const REDIRECT_URI = 'https://jee-tracker-ten.vercel.app'; 
 
 export function useDriveSync() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('gdrive_loggedin') === 'true');
   const [token, setToken] = useState(() => localStorage.getItem('gdrive_token') || null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // 🚀 URL se token pakadne ka jaadu
+  // 🚀 CATCH RAW TOKEN FROM URL
   useEffect(() => {
     const hash = window.location.hash;
     if (hash.includes('access_token=')) {
@@ -21,22 +22,30 @@ export function useDriveSync() {
         localStorage.setItem('gdrive_token', accessToken);
         localStorage.setItem('gdrive_loggedin', 'true');
         
-        // URL ko clean kar dete hain taaki ganda na dikhe
+        // Clean the URL
         window.history.replaceState(null, '', window.location.pathname);
-        console.log("✅ Token grabbed from URL successfully!");
+        console.log("✅ RAW OAUTH BYPASS SUCCESSFUL!");
       }
     }
   }, []);
 
-  const loginWithGoogle = useGoogleLogin({
-    ux_mode: 'redirect',
-    // 🔥 YAHI MISSING THA! Is link ke bina library chupke se popup khol rahi thi.
-    redirect_uri: 'https://jee-tracker-ten.vercel.app', 
-    scope: 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file',
-  });
+  const loginWithGoogle = () => {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    
+    if (!clientId) {
+      alert("❌ Client ID not found! Check Vercel environment variables.");
+      return;
+    }
+
+    const scope = encodeURIComponent('https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file');
+    
+    // 🔥 THE MAGIC BULLET: No libraries, no popups. Raw browser redirection.
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=${scope}&prompt=consent`;
+    
+    window.location.href = authUrl; 
+  };
 
   const logoutGoogle = () => {
-    googleLogout();
     setIsLoggedIn(false);
     setToken(null);
     localStorage.removeItem('gdrive_token');
