@@ -45,12 +45,11 @@ const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
 };
 
 export default function ProgressView({ themeToggle, timerIsland }) {
-  // === NEW STATES FOR MONTH FILTERING ===
   const [currentRenderDate, setCurrentRenderDate] = useState(new Date());
   const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const currentMonthKey = `${currentRenderDate.getFullYear()}-${String(currentRenderDate.getMonth() + 1).padStart(2, '0')}`;
 
-  const [viewType, setViewType] = useState('Monthly');
+  const [viewType, setViewType] = useState('Monthly'); 
   const [totalChartType, setTotalChartType] = useState('Line'); 
   const [isTotalChartTypeOpen, setIsTotalChartTypeOpen] = useState(false);
   const [subjectChartType, setSubjectChartType] = useState('Pie'); 
@@ -60,7 +59,7 @@ export default function ProgressView({ themeToggle, timerIsland }) {
   const [chapterStats, setChapterStats] = useState({ Physics: {}, Chemistry: {}, Mathematics: {} });
   const [activeSubjectPopup, setActiveSubjectPopup] = useState(null);
 
-  const [mocks, setMocks] = useState(() => JSON.parse(localStorage.getItem('tracker-mocks') || '[]'));
+  const [mocks] = useState(() => JSON.parse(localStorage.getItem('tracker-mocks') || '[]'));
   const [activeMockPopup, setActiveMockPopup] = useState(null);
 
   const SUBJECT_COLORS = { Physics: '#3b82f6', Chemistry: '#10b981', Mathematics: '#8b5cf6' };
@@ -70,7 +69,7 @@ export default function ProgressView({ themeToggle, timerIsland }) {
       if (totalChartType === 'Bar') setTotalChartType('Line');
       if (subjectChartType === 'Bar') setSubjectChartType('Line');
     }
-  }, [viewType]);
+  }, [viewType, totalChartType, subjectChartType]);
 
   useEffect(() => {
     const closeDropdowns = (e) => { 
@@ -81,13 +80,10 @@ export default function ProgressView({ themeToggle, timerIsland }) {
     return () => document.removeEventListener('mousedown', closeDropdowns);
   }, []);
 
-  // ANALYTICS DATA GENERATION (Filtered by currentRenderDate)
   useEffect(() => {
     const rawEvents = JSON.parse(localStorage.getItem('tracker-events') || '[]');
     const doneEvents = rawEvents.filter(e => e.done === true || e.extendedProps?.done === true);
-    
-    // Yaha date ko currentRenderDate se map kiya gaya hai
-    const now = currentRenderDate; 
+    const now = currentRenderDate;
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
     let data = [];
@@ -130,10 +126,9 @@ export default function ProgressView({ themeToggle, timerIsland }) {
       });
 
       data.sort((a,b) => a.timeVal - b.timeVal);
-      // Logic for cutting off lines for future hours today
+      const curDec = new Date().getHours() + new Date().getMinutes()/60;
       if (now.toDateString() === new Date().toDateString()) {
-         const curDec = new Date().getHours() + new Date().getMinutes()/60;
-         data.forEach(d => { if(d.timeVal > curDec) { d.hours = null; d.Physics = null; d.Chemistry = null; d.Mathematics = null; } });
+        data.forEach(d => { if(d.timeVal > curDec) { d.hours = null; d.Physics = null; d.Chemistry = null; d.Mathematics = null; } });
       }
 
     } else {
@@ -144,8 +139,7 @@ export default function ProgressView({ themeToggle, timerIsland }) {
 
       for (let i = 0; i < days; i++) {
         const d = new Date(startPoint); d.setDate(startPoint.getDate() + i);
-        // Only block future dates if the selected month is the current physical month
-        const isFuture = d > new Date(); 
+        const isFuture = d > new Date();
         data.push({ name: viewType === 'Monthly' ? String(i + 1) : d.toLocaleDateString('en-US', { weekday: 'short' }), dateObj: d, isEndDot: d.toDateString() === new Date().toDateString(), hours: isFuture ? null : 0, Physics: isFuture ? null : 0, Chemistry: isFuture ? null : 0, Mathematics: isFuture ? null : 0 });
       }
 
@@ -179,7 +173,7 @@ export default function ProgressView({ themeToggle, timerIsland }) {
     }
 
     setChartData(data); setTotalStats(stats); setChapterStats(chapStats);
-  }, [viewType, currentRenderDate]); // currentRenderDate dependency added!
+  }, [viewType, currentRenderDate]);
 
   const categorizeMocks = (mocksList, type) => {
      let r=0, y=0, g=0;
@@ -204,7 +198,6 @@ export default function ProgressView({ themeToggle, timerIsland }) {
      return { data, lists };
   };
 
-  // MOCK TEST FILTERING BY CURRENT MONTH
   const monthlyMocks = mocks.filter(m => m.date && m.date.startsWith(currentMonthKey));
   const mainsMocks = monthlyMocks.filter(m => m.type === 'JEE Mains' && m.isCompleted);
   const advMocks = monthlyMocks.filter(m => m.type === 'JEE Advanced' && m.isCompleted);
@@ -294,7 +287,6 @@ export default function ProgressView({ themeToggle, timerIsland }) {
         </>
       )}
 
-      {/* HEADER WITH MONTH DROPDOWN & ARROWS */}
       <div className="flex justify-between items-center px-6 py-4 border-b border-slate-300/40 dark:border-slate-700/50 shrink-0 relative">
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -457,7 +449,6 @@ export default function ProgressView({ themeToggle, timerIsland }) {
           </div>
         </div>
         
-        {/* MOCK TEST ANALYTICS SECTION (Filtered by Month) */}
         <div className="bg-white/30 dark:bg-slate-900/30 backdrop-blur-md rounded-[32px] border border-white/20 shadow-xl p-6 mt-6">
             <div className="flex items-center gap-2 mb-6"><Target size={16} className="text-red-500 fill-red-500" /><h3 className="text-sm font-extrabold text-slate-800 dark:text-white uppercase tracking-widest">Mock Test Analytics</h3></div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -489,10 +480,8 @@ export default function ProgressView({ themeToggle, timerIsland }) {
                      </ResponsiveContainer>
                   ) : <div className="flex-1 flex items-center justify-center text-xs font-bold text-slate-400">No completed mocks this month.</div>}
                </div>
-
             </div>
         </div>
-
       </div>
     </div>
   );
