@@ -595,7 +595,6 @@ export default function CalendarView({ themeToggle, timerIsland }) {
               .fc-view-harness { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
             }
           `}</style>
-          `}</style>
           <div className="w-full h-full">
             <FullCalendar
               ref={calendarRef}
