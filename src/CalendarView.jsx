@@ -586,6 +586,15 @@ export default function CalendarView({ themeToggle, timerIsland }) {
                padding: 2px 6px; border-radius: 4px; font-weight: bold;
                z-index: 50;
             }
+
+            /*  MOBILE FIXES  */
+            @media (max-width: 768px) {
+              .custom-calendar { overflow-x: auto; padding-bottom: 10px; }
+              /* Force min-width so tiles don't squish, and explicitly draw bottom border */
+              .fc-scrollgrid { min-width: 800px !important; border-bottom: 1px solid var(--fc-border-color) !important; }
+              .fc-view-harness { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
+            }
+          `}</style>
           `}</style>
           <div className="w-full h-full">
             <FullCalendar
