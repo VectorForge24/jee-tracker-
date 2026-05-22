@@ -368,21 +368,22 @@ export default function CalendarView({ themeToggle, timerIsland }) {
   const taskMonthKey = `${taskDateObj.getFullYear()}-${String(taskDateObj.getMonth() + 1).padStart(2, '0')}`;
   const availableChapters = chapters.filter(c => c.monthKey === taskMonthKey && c.subject === subject);
 
-  // 🔥 THE "FIND THE HOUR ROW" AUTO-SCROLL FIX 🔥
+  // 🔥 THE BRUTE-FORCE COORDINATE SCROLL 🔥
   useEffect(() => {
     if (currentView === 'timeGridWeek' || currentView === 'timeGridDay') {
       const timer = setTimeout(() => {
-        // Abhi ka ghanta nikalo (e.g., agar 8:41 PM hai, toh "20:00:00" banayega)
-        const currentHour = new Date().getHours().toString().padStart(2, '0') + ':00:00';
+        // Laal line dhoondho, agar na mile toh current hour ki row dhoondho
+        const targetElement = document.querySelector('.fc-timegrid-now-indicator-line') || 
+                              document.querySelector(`tr[data-time="${new Date().getHours().toString().padStart(2, '0') + ':00:00'}"]`);
         
-        // FullCalendar ke us specific ghante wali physically row ko dhoondho
-        const targetRow = document.querySelector(`tr[data-time="${currentHour}"]`);
-        
-        if (targetRow) {
-          // Us row ko smoothly screen ke center me le aao
-          targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (targetElement) {
+          // Element ki top position nikalo aur usme se 100px minus kar do taaki center me aaye
+          const yPosition = targetElement.getBoundingClientRect().top + window.scrollY - 100;
+          
+          // Seedha poore window/container ko us coordinate par phek do
+          window.scrollTo({ top: yPosition, behavior: 'smooth' });
         }
-      }, 400); // 400ms ka safe delay taaki row render ho chuki ho
+      }, 500); // 500ms guaranteed render time
       
       return () => clearTimeout(timer);
     }
