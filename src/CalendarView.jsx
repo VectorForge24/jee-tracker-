@@ -744,55 +744,6 @@ export default function CalendarView({ themeToggle, timerIsland }) {
           </div>
         </div>
       )}
-
-      {/* --- CHAPTERS MAPPING MODAL --- */}
-      {isChapterModalOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex justify-center items-center p-4">
-          
-          {/* 📦 THE ACTUAL CENTERED POPUP BOX (Exactly like other modals) */}
-          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl w-full max-w-3xl rounded-[32px] p-6 sm:p-8 relative shadow-2xl border border-white/20 max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 text-slate-800 dark:text-white">
-            
-            {/* 1. Header Area with Title & Cross Icon */}
-            <div className="flex justify-between items-center mb-6 shrink-0">
-              <h3 className="text-xl sm:text-2xl font-black tracking-tight">
-                Select Monthly Chapters
-              </h3>
-              <button 
-                onClick={() => setIsMonthlyModalOpen(false)}
-                className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* 2. Scrollable Body (Iske andar tera list automatic scroll hoga) */}
-            <div className="flex-1 overflow-y-auto pr-2 show-scrollbar mb-6">
-              
-              {/* 🔥 TERI PURANI CHAPTERS CHECKBOX LIST KA CODE YAHAN AAYEGA 🔥 */}
-              {/* Jo grid, columns aur map function chal raha tha chapters dikhane ke liye, usko bas yahan rakh de */}
-
-            </div>
-
-            {/* 3. Footer Action Buttons */}
-            <div className="flex justify-end gap-3 shrink-0 pt-4 border-t border-slate-200 dark:border-slate-800">
-              <button 
-                onClick={() => setIsMonthlyModalOpen(false)}
-                className="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-5 rounded-2xl transition-colors text-sm"
-              >
-                Cancel
-              </button>
-              <button 
-                onClick={handleSaveSelectedChapters}
-                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-2xl transition-colors text-sm shadow-lg shadow-blue-500/20"
-              >
-                Save Selected Chapters
-              </button>
-            </div>
-
-          </div>
-        </div>,
-        document.body
-      )}
               
       {/* TASK MODAL WITH 9 COLORS */}
       {isModalOpen && (
@@ -942,6 +893,36 @@ export default function CalendarView({ themeToggle, timerIsland }) {
           </div>
         </div>
       )}
+
+      {isChapterModalOpen && (
+        <div className="fixed inset-0 z-[9999] flex justify-center items-center p-4">
+          
+          {/* THE ACTUAL CENTERED POPUP BOX */}
+          <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl w-full max-w-3xl rounded-[32px] p-6 sm:p-8 relative shadow-2xl border border-white/20 max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-200 text-slate-800 dark:text-white">
+            
+            {/* 1. Header */}
+            <div className="flex justify-between items-center mb-6 shrink-0">
+              <h3 className="text-xl sm:text-2xl font-black tracking-tight">Select Monthly Chapters</h3>
+              <button onClick={() => setIsMonthlyModalOpen(false)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* 2. Scrollable Body */}
+            <div className="flex-1 overflow-y-auto pr-2 show-scrollbar mb-6">
+              {/* TERI CHAPTERS KI LIST YAHAN DAAL DE */}
+            </div>
+
+            {/* 3. Footer */}
+            <div className="flex justify-end gap-3 shrink-0 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <button onClick={() => setIsMonthlyModalOpen(false)} className="bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold py-2.5 px-5 rounded-2xl transition-colors text-sm">Cancel</button>
+              <button onClick={handleSaveSelectedChapters} className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-2xl transition-colors text-sm shadow-lg shadow-blue-500/20">Save Selected Chapters</button>
+            </div>
+
+          </div>
+        </div>
+      )}
+      
     </div>
   );
 }
