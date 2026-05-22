@@ -242,7 +242,7 @@ export default function App() {
 
       {/* Changed flex-row layout to flex-col for Top Nav */}
       <div 
-        className="flex flex-col h-screen w-full overflow-hidden text-slate-800 dark:text-slate-100 transition-colors duration-300 relative bg-slate-100 dark:bg-[#0b1120]"
+        className="flex flex-col min-h-screen w-full overflow-x-hidden text-slate-800 dark:text-slate-100 transition-colors duration-300 relative bg-slate-100 dark:bg-[#0b1120]"
         style={{ backgroundImage: bgImage ? `url(${bgImage})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }}
       >
         {!bgImage && (
@@ -253,7 +253,7 @@ export default function App() {
         )}
 
         {/* 🔥 NEW TOP NAVBAR 🔥 */}
-        <nav className="w-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 z-20 shrink-0 shadow-lg border-b border-white/20">
+        <nav className="sticky top-0 w-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 z-[200] shrink-0 shadow-lg border-b border-white/20">
           
           {/* Left: Title */}
           <div className="flex-1 flex justify-start items-center">
@@ -278,7 +278,7 @@ export default function App() {
         </nav>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-2 md:p-4 overflow-hidden relative flex flex-col z-10 h-full">
+        <main className="flex-1 p-2 md:p-4 relative flex flex-col z-10">
           {activeTab === 'calendar' && <CalendarView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} />}
           {activeTab === 'syllabus' && <SyllabusView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} />}
           {activeTab === 'progress' && <ProgressView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} />}
