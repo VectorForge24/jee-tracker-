@@ -300,7 +300,7 @@ export default function App() {
         </nav>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-2 md:p-4 relative flex flex-col z-10">
+        <main className="flex-1 p-2 md:p-4 flex flex-col">
           {activeTab === 'calendar' && <CalendarView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} />}
           {activeTab === 'syllabus' && <SyllabusView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} />}
           {activeTab === 'progress' && <ProgressView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} />}
