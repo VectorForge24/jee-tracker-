@@ -369,7 +369,7 @@ export default function CalendarView({ themeToggle, timerIsland }) {
   const availableChapters = chapters.filter(c => c.monthKey === taskMonthKey && c.subject === subject);
 
   return (
-    <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl h-full w-full flex flex-col transition-colors duration-300 relative rounded-[32px] shadow-2xl border border-white/20 overflow-hidden mb-2 mr-2">
+    <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl mini-h-screen w-full flex flex-col transition-colors duration-300 relative rounded-[32px] shadow-2xl border border-white/20 mb-2 mr-2">
       
       {isDateDropdownOpen && <div className="fixed inset-0 z-[190]" onClick={() => setIsDateDropdownOpen(false)}></div>}
 
@@ -413,10 +413,10 @@ export default function CalendarView({ themeToggle, timerIsland }) {
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden min-h-0 bg-transparent relative w-full">
+      <div className="flex-1 flex flex-col md:flex-row bg-transparent relative w-full">
         
         {/* LEFT SIDEBAR */}
-        <div className="w-[300px] border-r border-slate-300/40 dark:border-slate-700/50 p-5 flex flex-col overflow-y-auto hidden md:flex hide-scrollbar h-full shrink-0">
+        <div className="w-full md:w-[300px] border-b md:border-b-0 md:border-r border-slate-300/40 dark:border-slate-700/50 p-5 flex flex-col hidden md:flex shrink-0">
           
           <div className="mb-6 select-none shrink-0 bg-white/20 dark:bg-slate-800/30 p-4 rounded-3xl border border-white/30 dark:border-white/5 shadow-sm">
             <div className="flex justify-between items-center mb-4 px-2">
@@ -610,7 +610,7 @@ export default function CalendarView({ themeToggle, timerIsland }) {
               dayCellContent={currentView === 'dayGridMonth' ? renderMonthCell : undefined}
               dayHeaderContent={renderHeaderContent}
               moreLinkClick={(arg) => { triggerDailyModal(formatLocalYMD(arg.date)); return 'prevent'; }}
-              allDaySlot={false} slotDuration="01:00:00" slotMinTime="00:00:00" slotMaxTime="24:00:00" nowIndicator={true} height="100%"
+              allDaySlot={false} slotDuration="01:00:00" slotMinTime="00:00:00" slotMaxTime="24:00:00" nowIndicator={true} height="auto"
               scrollTime={getScrollTime()} 
             />
           </div>
