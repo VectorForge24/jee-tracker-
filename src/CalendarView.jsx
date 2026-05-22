@@ -213,9 +213,16 @@ export default function CalendarView({ themeToggle, timerIsland }) {
     const mocksForDay = mocks.filter(m => m.date === safeDateStr);
     setDailyModal({ isOpen: true, dateStr: safeDateStr, tasks: tasksForDay, dayMocks: mocksForDay }); 
   };
-  
-  const handleDateClick = (arg) => { if (currentView === 'dayGridMonth') triggerDailyModal(arg.dateStr); else openAddModal(arg.dateStr.split('T')[0]); };
-  
+  const handleDateClick = (arg) => {
+    // ⏳ Click event ko bubble hoke marne ke liye 10ms ka delay
+    setTimeout(() => {
+    
+       // 🔥 TERA PURANA CODE YAHAN RAKH DE 🔥
+       // (Jo bhi states tu yahan update kar raha tha, unhe as it is yahan paste kar de)
+    
+    }, 10);
+  };
+
   const openChapterModal = () => { 
     // Force refresh syllabus to avoid "Empty Syllabus" bug
     const updatedSyllabus = JSON.parse(localStorage.getItem('tracker-syllabus') || '[]');
