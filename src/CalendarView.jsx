@@ -368,6 +368,23 @@ export default function CalendarView({ themeToggle, timerIsland }) {
   const taskMonthKey = `${taskDateObj.getFullYear()}-${String(taskDateObj.getMonth() + 1).padStart(2, '0')}`;
   const availableChapters = chapters.filter(c => c.monthKey === taskMonthKey && c.subject === subject);
 
+  // 🔥 AUTO-SCROLL FIX FOR "HEIGHT: AUTO" CALENDARS 🔥
+  useEffect(() => {
+    // Sirf Week ya Day view me scroll karna hai
+    if (currentView === 'timeGridWeek' || currentView === 'timeGridDay') {
+      // Thoda delay taaki calendar pehle DOM me render ho jaye
+      const timer = setTimeout(() => {
+        const nowIndicator = document.querySelector('.fc-timegrid-now-indicator-line');
+        if (nowIndicator) {
+          // block: 'center' us laal line ko screen ke ekdum beech me laa dega
+          nowIndicator.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300); // 300ms is a safe sweet spot
+      
+      return () => clearTimeout(timer);
+    }
+  }, [currentView]);
+  
   return (
    <>
     <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl mini-h-screen w-full flex flex-col transition-colors duration-300 relative rounded-[32px] shadow-2xl border border-white/20 mb-2 mr-2">
