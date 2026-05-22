@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import { createPortal } from 'react-dom';
 import interactionPlugin from '@fullcalendar/interaction';
 import confetti from 'canvas-confetti';
 import { Plus, X, Pencil, Trash2, Clock, Calendar as CalIcon, ChevronDown, CheckSquare, Square, Zap, Target, CheckCircle, ChevronLeft, ChevronRight, History } from 'lucide-react';
@@ -745,7 +746,7 @@ export default function CalendarView({ themeToggle, timerIsland }) {
       )}
 
       {/* --- CHAPTERS MAPPING MODAL --- */}
-      {isChapterModalOpen && (
+      {isChapterModalOpen && createPortal(
         <div className="fixed inset-0 z-[99999] flex justify-center items-center p-4">
           <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-3xl w-full max-w-5xl rounded-[32px] p-8 shadow-2xl border border-white/20 dark:border-white/10 text-slate-800 dark:text-white relative flex flex-col max-h-[85vh]">
             <button onClick={() => setIsChapterModalOpen(false)} className="absolute top-6 right-6 text-slate-500 hover:text-slate-800 dark:hover:text-white"><X size={24} /></button>
