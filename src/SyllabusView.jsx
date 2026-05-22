@@ -8,8 +8,8 @@ const continuousSprayConfetti = () => {
   const leftCannon = confetti.create(null, { resize: true });
   const rightCannon = confetti.create(null, { resize: true });
   const fire = () => {
-    leftCannon({ particleCount: 5, angle: 60, spread: 70, origin: { x: 0, y: 1 }, gravity: 0.8, ticks: 150, colors: ['#3b82f6', '#f59e0b', '#ec4899'] });
-    rightCannon({ particleCount: 5, angle: 120, spread: 70, origin: { x: 1, y: 1 }, gravity: 0.8, ticks: 150, colors: ['#3b82f6', '#f59e0b', '#ec4899'] });
+    leftCannon({ particleCount: 5, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, gravity: 0.8, ticks: 150, colors: ['#3b82f6', '#f59e0b', '#ec4899'] });
+    rightCannon({ particleCount: 5, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, gravity: 0.8, ticks: 150, colors: ['#3b82f6', '#f59e0b', '#ec4899'] });
     if (Date.now() < end) requestAnimationFrame(fire);
   };
   fire();
