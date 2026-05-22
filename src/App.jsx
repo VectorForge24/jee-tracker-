@@ -249,6 +249,17 @@ export default function App() {
         .bg-white\\/40 { background-color: rgba(255, 255, 255, ${tileOpacity / 100}) !important; }
         .dark .dark\\:bg-slate-900\\/40 { background-color: rgba(15, 23, 42, ${tileOpacity / 100}) !important; }
         .dark .dark\\:bg-slate-800\\/40 { background-color: rgba(30, 41, 59, ${tileOpacity / 100}) !important; }
+    
+        /* 🚀 THE FIX: Dynamic blur control (Slider 0% toh blur bhi 0px = Crystal Clear) */
+        .backdrop-blur-xl { 
+          backdrop-filter: blur(${(tileOpacity / 100) * 24}px) !important; 
+          -webkit-backdrop-filter: blur(${(tileOpacity / 100) * 24}px) !important; 
+        }
+
+        /* Internal panels, calendar sidebar & widgets opacity auto-scaling */
+        .bg-white\\/20, .bg-white\\/30 { background-color: rgba(255, 255, 255, ${(tileOpacity / 100) * 0.25}) !important; }
+        .dark .dark\\:bg-slate-800\\/30 { background-color: rgba(30, 41, 59, ${(tileOpacity / 100) * 0.3}) !important; }
+        .dark .dark\\:bg-black\\/20 { background-color: rgba(0, 0, 0, ${(tileOpacity / 100) * 0.2}) !important; }
       `}</style>
 
       <div 
