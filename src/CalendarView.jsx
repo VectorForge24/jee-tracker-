@@ -368,27 +368,6 @@ export default function CalendarView({ themeToggle, timerIsland }) {
   const taskMonthKey = `${taskDateObj.getFullYear()}-${String(taskDateObj.getMonth() + 1).padStart(2, '0')}`;
   const availableChapters = chapters.filter(c => c.monthKey === taskMonthKey && c.subject === subject);
 
-  // 🔥 THE BRUTE-FORCE COORDINATE SCROLL 🔥
-  useEffect(() => {
-    if (currentView === 'timeGridWeek' || currentView === 'timeGridDay') {
-      const timer = setTimeout(() => {
-        // Laal line dhoondho, agar na mile toh current hour ki row dhoondho
-        const targetElement = document.querySelector('.fc-timegrid-now-indicator-line') || 
-                              document.querySelector(`tr[data-time="${new Date().getHours().toString().padStart(2, '0') + ':00:00'}"]`);
-        
-        if (targetElement) {
-          // Element ki top position nikalo aur usme se 100px minus kar do taaki center me aaye
-          const yPosition = targetElement.getBoundingClientRect().top + window.scrollY - 100;
-          
-          // Seedha poore window/container ko us coordinate par phek do
-          window.scrollTo({ top: yPosition, behavior: 'smooth' });
-        }
-      }, 500); // 500ms guaranteed render time
-      
-      return () => clearTimeout(timer);
-    }
-  }, [currentView]);
-  
   return (
    <>
     <div className="bg-white/40 dark:bg-slate-900/40 backdrop-blur-xl mini-h-screen w-full flex flex-col transition-colors duration-300 relative rounded-[32px] shadow-2xl border border-white/20 mb-2 mr-2">
