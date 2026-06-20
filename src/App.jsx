@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Sun, Moon, Clock, Play, Pause, RotateCcw, X, Settings, Image as ImageIcon, Trash2, SunDim, Upload, Download, CheckCircle, Save, Layers } from 'lucide-react';
 import CalendarView from './CalendarView';
 import SyllabusView from './SyllabusView';
@@ -66,8 +66,22 @@ export default function App() {
 
   const { isLoggedIn, token, loginWithGoogle, logoutGoogle, saveToDrive, isSyncing } = useDriveSync();
   
-  // 🔥 FIX: Store the true original prototype method to prevent stack overflow on re-renders
-  const originalSetItemRef = useRef(Storage.prototype.setItem);
+  // 🔥 THE BULLETPROOF EXPLICIT SYNC ENGINE 🔥
+  const syncTimeoutRef = useRef(null);
+  
+  const triggerSync = useCallback(() => {
+    if (!isLoggedIn || !token) return;
+    
+    // Clear previous timeout to debounce rapid clicks (like multiple task checkboxes)
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+    
+    // Wait 2.5 seconds before syncing to GDrive to avoid API rate limits
+    syncTimeoutRef.current = setTimeout(() => {
+      saveToDrive(token);
+    }, 2500);
+  }, [isLoggedIn, token, saveToDrive]);
 
   useEffect(() => {
     const triggerResize = () => window.dispatchEvent(new Event('resize'));
@@ -75,25 +89,6 @@ export default function App() {
     const t2 = setTimeout(triggerResize, 300);
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [activeTab]);
-
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    let syncTimeout;
-    
-    // Safely apply the patch using the cached reference
-    Storage.prototype.setItem = function(key, value) {
-      originalSetItemRef.current.apply(this, arguments);
-      if (key.startsWith('tracker-')) {
-        clearTimeout(syncTimeout);
-        syncTimeout = setTimeout(() => saveToDrive(token), 3000); 
-      }
-    };
-    
-    return () => { 
-      Storage.prototype.setItem = originalSetItemRef.current; 
-      clearTimeout(syncTimeout); 
-    };
-  }, [isLoggedIn, token, saveToDrive]);
 
   const handleLocalExport = () => {
     const data = {};
@@ -123,6 +118,7 @@ export default function App() {
     reader.readAsText(file);
   };
 
+  // Timer logic
   useEffect(() => {
     let interval;
     if (isRunning) {
@@ -170,16 +166,22 @@ export default function App() {
     setTimeout(() => setIslandState('hidden'), 400);
   };
 
+  // 🔥 Explicit Syncs for Settings 🔥
   useEffect(() => {
     localStorage.setItem('tracker-theme', isDark ? 'dark' : 'light');
     if (isDark) document.documentElement.classList.add('dark'); else document.documentElement.classList.remove('dark');
-  }, [isDark]);
+    triggerSync();
+  }, [isDark, triggerSync]);
 
-  useEffect(() => { localStorage.setItem('tracker-color', activeTheme); }, [activeTheme]);
-  useEffect(() => { localStorage.setItem('tracker-color-intensity', colorIntensity.toString()); }, [colorIntensity]);
-  useEffect(() => { localStorage.setItem('tracker-bg-dimness', bgDimness.toString()); }, [bgDimness]);
-  useEffect(() => { localStorage.setItem('tracker-tile-opacity', tileOpacity.toString()); }, [tileOpacity]);
-  useEffect(() => { if (bgImage) localStorage.setItem('tracker-bg', bgImage); else localStorage.removeItem('tracker-bg'); }, [bgImage]);
+  useEffect(() => { localStorage.setItem('tracker-color', activeTheme); triggerSync(); }, [activeTheme, triggerSync]);
+  useEffect(() => { localStorage.setItem('tracker-color-intensity', colorIntensity.toString()); triggerSync(); }, [colorIntensity, triggerSync]);
+  useEffect(() => { localStorage.setItem('tracker-bg-dimness', bgDimness.toString()); triggerSync(); }, [bgDimness, triggerSync]);
+  useEffect(() => { localStorage.setItem('tracker-tile-opacity', tileOpacity.toString()); triggerSync(); }, [tileOpacity, triggerSync]);
+  useEffect(() => { 
+    if (bgImage) localStorage.setItem('tracker-bg', bgImage); 
+    else localStorage.removeItem('tracker-bg'); 
+    triggerSync();
+  }, [bgImage, triggerSync]);
 
   const currentTheme = THEMES.find(t => t.id === activeTheme) || THEMES[0];
 
@@ -297,10 +299,11 @@ export default function App() {
         </nav>
 
         <main className="flex-1 p-2 md:p-4 flex flex-col z-10 relative">
-          {activeTab === 'calendar' && <CalendarView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} />}
-          {activeTab === 'syllabus' && <SyllabusView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} />}
-          {activeTab === 'progress' && <ProgressView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} />}
-          {activeTab === 'timer' && <TimerView themeToggle={toggleThemeBtn} timerMode={timerMode} setTimerMode={setTimerMode} pomodoroType={pomodoroType} setPomodoroType={setPomodoroType} timeLeft={timeLeft} setTimeLeft={setTimeLeft} totalTime={totalTime} setTotalTime={setTotalTime} isRunning={isRunning} setIsRunning={setIsRunning} />}
+          {/* 🔥 PASSING triggerSync TO ALL VIEWS 🔥 */}
+          {activeTab === 'calendar' && <CalendarView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} syncTrigger={triggerSync} />}
+          {activeTab === 'syllabus' && <SyllabusView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} syncTrigger={triggerSync} />}
+          {activeTab === 'progress' && <ProgressView themeToggle={toggleThemeBtn} timerIsland={timerIslandUI} syncTrigger={triggerSync} />}
+          {activeTab === 'timer' && <TimerView themeToggle={toggleThemeBtn} timerMode={timerMode} setTimerMode={setTimerMode} pomodoroType={pomodoroType} setPomodoroType={setPomodoroType} timeLeft={timeLeft} setTimeLeft={setTimeLeft} totalTime={totalTime} setTotalTime={setTotalTime} isRunning={isRunning} setIsRunning={setIsRunning} syncTrigger={triggerSync} />}
         </main>
       </div>
 
@@ -364,7 +367,7 @@ export default function App() {
                     <input type="file" accept="image/*" onChange={async (e) => { 
                       if(e.target.files[0]) {
                         setBgImage(await compressImage(e.target.files[0])); 
-                        e.target.value = null; // Fix: Reset input to allow re-uploads
+                        e.target.value = null;
                       }
                     }} className="hidden" />
                   </label>
