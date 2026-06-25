@@ -1,0 +1,203 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply m-0 p-0 bg-slate-50 dark:bg-[#0b1120] transition-colors duration-300;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* --- Clean Grid & Background --- */
+.fc {
+  --fc-border-color: #e2e8f0 !important; 
+  --fc-page-bg-color: transparent !important;
+  --fc-neutral-bg-color: transparent !important;
+  --fc-today-bg-color: transparent !important; 
+}
+.dark .fc {
+  --fc-border-color: #1e293b !important;
+}
+
+.dark .fc-col-header-cell-cushion,
+.dark .fc-timegrid-axis-cushion,
+.dark .fc-timegrid-slot-label-cushion {
+  color: #64748b !important;
+}
+
+.fc-timegrid-slot-label-cushion {
+  padding-right: 12px !important;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+  border: 1px solid var(--fc-border-color) !important;
+}
+.fc-timegrid-slot-lane {
+  border-bottom: 1px solid var(--fc-border-color) !important; 
+}
+
+/* --- The Premium Event Style --- */
+.fc-event {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.fc-event-main {
+  padding: 0 !important;
+}
+
+/* --- PERFECT UNIFORM CENTER STAGED TILES --- */
+.fc-timegrid-event {
+  /* Exactly 2px uniform gap from top, bottom, left, and right grid lines */
+  inset: 2px !important; 
+  width: auto !important;
+  height: auto !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* --- DE-CONGEST MONTHLY TILES --- */
+.fc-daygrid-event-harness {
+  margin-top: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+.fc-daygrid-more-link {
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  color: #3b82f6 !important;
+  padding-left: 4px;
+}
+
+.fc-daygrid-day-frame {
+  min-height: 120px !important; 
+}
+
+.fc-timegrid-slot {
+  height: 8em !important; 
+}
+
+/* =========================================================
+   --- THE ULTIMATE FULL-WIDTH RED LINE HACK ---
+   ========================================================= */
+.fc-timegrid-body, 
+.fc-timegrid-cols, 
+.fc-timegrid-now-indicator-container {
+  overflow: visible !important;
+}
+
+.fc .fc-timegrid-now-indicator-line {
+  display: none !important; 
+}
+
+.fc-direction-ltr .fc-timegrid-now-indicator-arrow {
+  border: none !important;
+  background-color: #ff4757 !important;
+  width: 44px !important;
+  height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: -10px !important; 
+  border-radius: 4px !important;
+  z-index: 60 !important;
+  position: absolute !important;
+  left: 10px !important; 
+}
+
+.fc-direction-ltr .fc-timegrid-now-indicator-arrow::after {
+  content: var(--current-time, "Now") !important; 
+  color: white !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.5px;
+}
+
+.fc-direction-ltr .fc-timegrid-now-indicator-arrow::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 44px; 
+  width: 200vw; 
+  height: 2px;
+  background-color: #ff4757;
+  z-index: -1; 
+}
+
+/* Hide Scrollbars */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.dark ::-webkit-scrollbar-thumb { background: #334155; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+/* ── Mobile responsive fixes ───────────────────────────────────────────────── */
+
+/* Prevent horizontal scroll on all views */
+html, body, #root {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* FullCalendar mobile: use day grid, hide time labels that overflow */
+@media (max-width: 768px) {
+  /* Make fc responsive without horizontal scroll */
+  .fc {
+    font-size: 11px !important;
+  }
+  .fc-timegrid-slot-label {
+    font-size: 9px !important;
+    padding: 0 2px !important;
+  }
+  .fc-col-header-cell-cushion {
+    font-size: 10px !important;
+    padding: 2px !important;
+  }
+  .fc-daygrid-day-number {
+    font-size: 11px !important;
+  }
+  /* Hide the time-week view on mobile - too cramped */
+  .fc-timeGridWeek-view .fc-timegrid-axis {
+    min-width: 30px !important;
+    width: 30px !important;
+  }
+  /* Event text smaller on mobile */
+  .fc-event-title {
+    font-size: 9px !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Ensure calendar fills width */
+  .custom-calendar .fc-view-harness {
+    height: auto !important;
+    min-height: 400px !important;
+  }
+  /* Nav tabs readable on mobile */
+  .fc-toolbar-chunk {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .fc-toolbar.fc-header-toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 8px !important;
+  }
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  button {
+    min-height: 36px;
+  }
+  input[type="range"] {
+    height: 24px;
+  }
+}
+
+/* Prevent text selection on double-tap (iOS) */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
