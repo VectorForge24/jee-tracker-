@@ -1,249 +1,174 @@
-import { useState, useCallback, useEffect } from 'react';
+/**
+ * useFirebaseSync — drop-in replacement for useDriveSync.
+ * 
+ * Returns EXACTLY the same API shape as the original useDriveSync:
+ *   { isLoggedIn, token, loginWithGoogle, logoutGoogle, saveToDrive, isSyncing }
+ * 
+ * App.jsx needs ZERO changes — every call site works identically.
+ * 
+ * What changed internally:
+ * - Auth: Firebase Google popup (permanent, never expires, auto-refreshes)
+ * - Storage: Firestore at users/{uid}/data/trackerData
+ * - saveToDrive(token) still called the same way — token param ignored (not needed)
+ */
 
-const FILE_NAME   = 'jee_tracker_backup.json';
-const REDIRECT_URI = 'https://jee-tracker-ten.vercel.app';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { initializeApp, getApps } from 'firebase/app';
+import {
+  getAuth,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+} from 'firebase/auth';
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
 
-// Buffer: treat token as expired 2 minutes early to avoid edge cases
-const EXPIRY_BUFFER_MS = 2 * 60 * 1000;
+// ── Firebase config from env vars ─────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+// Only initialise once (Vite HMR safe)
+const firebaseApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+const auth        = getAuth(firebaseApp);
+const db          = getFirestore(firebaseApp);
+
+// All localStorage keys that belong to the tracker
+const TRACKER_KEYS = [
+  'tracker-events',
+  'tracker-chapters',
+  'tracker-syllabus',
+  'tracker-mocks',
+  'tracker-materials',
+  'tracker-theme',
+  'tracker-color',
+  'tracker-color-intensity',
+  'tracker-bg-dimness',
+  'tracker-tile-opacity',
+  'tracker-bg',
+];
 
 export function useDriveSync() {
-  const [isLoggedIn,     setIsLoggedIn]     = useState(() => {
-    // Only consider logged in if token exists AND hasn't expired
-    const expiry = parseInt(localStorage.getItem('gdrive_token_expiry') || '0', 10);
-    return localStorage.getItem('gdrive_loggedin') === 'true' &&
-           localStorage.getItem('gdrive_token') !== null &&
-           Date.now() < expiry - EXPIRY_BUFFER_MS;
-  });
-  const [token,          setToken]          = useState(() => {
-    const expiry = parseInt(localStorage.getItem('gdrive_token_expiry') || '0', 10);
-    return Date.now() < expiry - EXPIRY_BUFFER_MS
-      ? localStorage.getItem('gdrive_token')
-      : null;
-  });
-  const [isSyncing,      setIsSyncing]      = useState(false);
-  const [sessionExpired, setSessionExpired] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [token,      setToken]      = useState(null); // uid — truthy = logged in
+  const [isSyncing,  setIsSyncing]  = useState(false);
+  const hasPulled    = useRef(false);
 
-  // ── Token expiry helper ────────────────────────────────────────────────────
-  function isTokenExpired() {
-    const expiry = parseInt(localStorage.getItem('gdrive_token_expiry') || '0', 10);
-    return Date.now() >= expiry - EXPIRY_BUFFER_MS;
-  }
-
-  function handleExpired() {
-    console.warn('⏰ Google token expired — clearing session');
-    localStorage.removeItem('gdrive_token');
-    localStorage.removeItem('gdrive_token_expiry');
-    localStorage.removeItem('gdrive_loggedin');
-    setToken(null);
-    setIsLoggedIn(false);
-    setSessionExpired(true);
-  }
-
-  // ── Guard: call before every Drive request ─────────────────────────────────
-  function guardToken(accessToken) {
-    if (!accessToken || isTokenExpired()) {
-      handleExpired();
-      return false;
-    }
-    return true;
-  }
-
-  // ── Handle 401 from any Drive response ────────────────────────────────────
-  async function checkResponse(res) {
-    if (res.status === 401) {
-      handleExpired();
-      return null;
-    }
-    return res;
-  }
-
-  // ── Capture token from URL hash on OAuth redirect ─────────────────────────
+  // ── Auth state listener — fires on every load, handles silent token refresh ──
   useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash.includes('access_token=')) return;
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setIsLoggedIn(true);
+        setToken(user.uid);
 
-    const params      = new URLSearchParams(hash.replace('#', '?'));
-    const accessToken = params.get('access_token');
-    const expiresIn   = parseInt(params.get('expires_in') || '3600', 10);
-
-    if (accessToken) {
-      const expiryTs = Date.now() + expiresIn * 1000;
-
-      setToken(accessToken);
-      setIsLoggedIn(true);
-      setSessionExpired(false);
-      localStorage.setItem('gdrive_token',        accessToken);
-      localStorage.setItem('gdrive_token_expiry', String(expiryTs));
-      localStorage.setItem('gdrive_loggedin',     'true');
-
-      window.history.replaceState(null, '', window.location.pathname);
-      console.log(`✅ Token captured. Expires in ${expiresIn}s (at ${new Date(expiryTs).toLocaleTimeString()})`);
-
-      fetchDataFromDrive(accessToken);
-    }
-  }, []);
-
-  // ── Periodic expiry check (every 60s) ─────────────────────────────────────
-  useEffect(() => {
-    if (!isLoggedIn) return;
-    const interval = setInterval(() => {
-      if (isTokenExpired()) handleExpired();
-    }, 60_000);
-    return () => clearInterval(interval);
-  }, [isLoggedIn]);
-
-  // ── Download from Drive ────────────────────────────────────────────────────
-  const fetchDataFromDrive = async (accessToken) => {
-    if (!guardToken(accessToken)) return;
-    setIsSyncing(true);
-    try {
-      const searchRes = await fetch(
-        `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${FILE_NAME}'&fields=files(id)`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-
-      const checked = await checkResponse(searchRes);
-      if (!checked) return;
-
-      const searchData = await checked.json();
-
-      if (searchData.files && searchData.files.length > 0) {
-        const fileId  = searchData.files[0].id;
-        const fileRes = await fetch(
-          `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        );
-
-        const fileChecked = await checkResponse(fileRes);
-        if (!fileChecked) return;
-
-        const backupData = await fileChecked.json();
-        let hasChanges = false;
-
-        Object.keys(backupData).forEach(key => {
-          if (localStorage.getItem(key) !== backupData[key]) {
-            Storage.prototype.setItem.call(localStorage, key, backupData[key]);
-            hasChanges = true;
-          }
-        });
-
-        if (hasChanges) {
-          alert('✅ Cloud Sync Complete! Restoring your JEE Command Center...');
-          window.location.reload();
-        } else {
-          console.log('✅ Drive data already in sync.');
+        // Pull from Firestore once per session (not on every re-render)
+        if (!hasPulled.current) {
+          hasPulled.current = true;
+          await pullFromFirestore(user.uid);
         }
       } else {
-        console.log('ℹ️ No backup found on Drive. Starting fresh.');
+        setIsLoggedIn(false);
+        setToken(null);
+        hasPulled.current = false;
+      }
+    });
+    return unsub;
+  }, []);
+
+  // ── Pull Firestore → localStorage on login ────────────────────────────────
+  const pullFromFirestore = async (uid) => {
+    try {
+      setIsSyncing(true);
+      const snap = await getDoc(doc(db, 'users', uid, 'data', 'trackerData'));
+      if (!snap.exists()) {
+        console.log('ℹ️ No cloud data yet — starting fresh');
+        return;
+      }
+
+      const remote     = snap.data();
+      let   hasChanges = false;
+
+      TRACKER_KEYS.forEach(key => {
+        if (remote[key] !== undefined && localStorage.getItem(key) !== remote[key]) {
+          localStorage.setItem(key, remote[key]);
+          hasChanges = true;
+        }
+      });
+
+      if (hasChanges) {
+        console.log('✅ Cloud data restored — reloading');
+        window.location.reload();
+      } else {
+        console.log('✅ Already in sync with cloud');
       }
     } catch (e) {
-      console.error('❌ Fetch error:', e);
+      console.error('Pull error:', e);
     } finally {
       setIsSyncing(false);
     }
   };
 
-  // ── Save to Drive ──────────────────────────────────────────────────────────
-  const saveToDrive = useCallback(async (accessToken) => {
-    // ⚠️  KEY FIX: guard before every save attempt
-    if (!guardToken(accessToken)) {
-      console.warn('⚠️ Skipping Drive save — token expired. User needs to reconnect.');
-      return;
-    }
+  // ── Push localStorage → Firestore ─────────────────────────────────────────
+  // saveToDrive(token) — token param accepted but not used (Firebase uses currentUser)
+  const saveToDrive = useCallback(async (_tokenIgnored) => {
+    const user = auth.currentUser;
+    if (!user) return; // Not logged in, silently skip
 
     setIsSyncing(true);
     try {
-      const dataToSave = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('tracker-')) {
-          dataToSave[key] = localStorage.getItem(key);
-        }
-      }
-      const fileContent = JSON.stringify(dataToSave);
+      const data = {};
+      TRACKER_KEYS.forEach(key => {
+        const val = localStorage.getItem(key);
+        if (val !== null) data[key] = val;
+      });
 
-      // Find existing file
-      const searchRes = await fetch(
-        `https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name='${FILE_NAME}'&fields=files(id)`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+      await setDoc(
+        doc(db, 'users', user.uid, 'data', 'trackerData'),
+        { ...data, _updatedAt: serverTimestamp() },
+        { merge: true }
       );
-
-      const checked = await checkResponse(searchRes);
-      if (!checked) return;
-
-      const searchData = await checked.json();
-      let fileId = searchData.files?.[0]?.id || null;
-
-      // Create if not found
-      if (!fileId) {
-        const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-          method:  'POST',
-          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ name: FILE_NAME, parents: ['appDataFolder'] }),
-        });
-        const createChecked = await checkResponse(createRes);
-        if (!createChecked) return;
-        const createData = await createChecked.json();
-        fileId = createData.id;
-      }
-
-      // Upload content
-      if (fileId) {
-        const uploadRes = await fetch(
-          `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
-          {
-            method:  'PATCH',
-            headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-            body:    fileContent,
-          }
-        );
-
-        const uploadChecked = await checkResponse(uploadRes);
-        if (!uploadChecked) return;
-
-        if (uploadChecked.ok) {
-          console.log(`✅ Synced to Drive. Size: ${fileContent.length} bytes`);
-        } else {
-          console.error('❌ Upload failed:', await uploadChecked.text());
-        }
-      }
-    } catch (error) {
-      console.error('❌ Drive sync error:', error);
+      console.log('✅ Saved to Firebase');
+    } catch (e) {
+      console.error('Save error:', e);
     } finally {
       setIsSyncing(false);
     }
   }, []);
 
-  // ── Login ──────────────────────────────────────────────────────────────────
-  const loginWithGoogle = () => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    if (!clientId) {
-      alert('❌ Client ID not found! Check Vercel environment variables.');
-      return;
+  // ── Login via popup — no redirect, no token expiry ────────────────────────
+  const loginWithGoogle = useCallback(async () => {
+    const provider = new GoogleAuthProvider();
+    provider.addScope('profile');
+    provider.addScope('email');
+    try {
+      await signInWithPopup(auth, provider);
+      // onAuthStateChanged fires automatically → pulls data
+    } catch (e) {
+      if (e.code !== 'auth/popup-closed-by-user') {
+        console.error('Login error:', e.message);
+        alert('Sign-in failed: ' + e.message);
+      }
     }
-    const scope = encodeURIComponent(
-      'https://www.googleapis.com/auth/drive.appdata ' +
-      'https://www.googleapis.com/auth/drive.file'
-    );
-    window.location.href =
-      `https://accounts.google.com/o/oauth2/v2/auth` +
-      `?client_id=${clientId}` +
-      `&redirect_uri=${REDIRECT_URI}` +
-      `&response_type=token` +
-      `&scope=${scope}` +
-      `&prompt=consent`;
-  };
+  }, []);
 
-  // ── Logout ─────────────────────────────────────────────────────────────────
-  const logoutGoogle = () => {
-    localStorage.removeItem('gdrive_token');
-    localStorage.removeItem('gdrive_token_expiry');
-    localStorage.removeItem('gdrive_loggedin');
-    setToken(null);
-    setIsLoggedIn(false);
-    setSessionExpired(false);
-  };
+  // ── Logout ────────────────────────────────────────────────────────────────
+  const logoutGoogle = useCallback(async () => {
+    await signOut(auth);
+    hasPulled.current = false;
+  }, []);
 
+  // Return same shape as original useDriveSync — App.jsx unchanged
   return {
     isLoggedIn,
     token,
@@ -251,6 +176,6 @@ export function useDriveSync() {
     logoutGoogle,
     saveToDrive,
     isSyncing,
-    sessionExpired,  // ← NEW: use this in App.jsx to show "Session expired" banner
+    sessionExpired: false, // Firebase never expires — always false
   };
 }

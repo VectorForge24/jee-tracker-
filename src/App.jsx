@@ -4,7 +4,7 @@ import CalendarView from './CalendarView';
 import SyllabusView from './SyllabusView';
 import ProgressView from './ProgressView';
 import TimerView from './TimerView';
-import { useFirebaseSync } from './useFirebaseSync';
+import { useDriveSync } from './useDriveSync';
 
 const formatTime = (totalSeconds, showHours = false) => {
   const h = Math.floor(totalSeconds / 3600);
@@ -64,7 +64,7 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [islandState, setIslandState] = useState('hidden');
 
-  const { isLoggedIn, token, userInfo, loginWithGoogle, logoutGoogle, saveToDrive, isSyncing } = useFirebaseSync();
+  const { isLoggedIn, token, loginWithGoogle, logoutGoogle, saveToDrive, isSyncing } = useDriveSync();
   
   // 🔥 THE BULLETPROOF EXPLICIT SYNC ENGINE 🔥
   const syncTimeoutRef = useRef(null);
@@ -79,7 +79,7 @@ export default function App() {
     
     // Wait 2.5 seconds before syncing to GDrive to avoid API rate limits
     syncTimeoutRef.current = setTimeout(() => {
-      saveToDrive();
+      saveToDrive(token);
     }, 2500);
   }, [isLoggedIn, token, saveToDrive]);
 
@@ -385,12 +385,12 @@ export default function App() {
               <div className="flex flex-col gap-3">
                 {isLoggedIn ? (
                   <div className="flex items-center justify-between bg-green-500/10 border border-green-500/30 p-3 rounded-2xl">
-                    <span className="text-sm font-bold text-green-600 dark:text-green-400 flex items-center gap-2"><CheckCircle size={16} /> Cloud Sync Active</span>
+                    <span className="text-sm font-bold text-green-600 dark:text-green-400 flex items-center gap-2"><CheckCircle size={16} /> GDrive Active</span>
                     <button onClick={logoutGoogle} className="text-xs font-bold text-slate-500 hover:text-red-500">Disconnect</button>
                   </div>
                 ) : (
                   <button onClick={() => loginWithGoogle()} className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-bold py-3 px-4 rounded-2xl shadow-sm flex items-center justify-center gap-3 transition-colors">
-                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" /> Sign in with Google
+                    <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" /> Auto-Sync with Google Drive
                   </button>
                 )}
 

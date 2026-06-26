@@ -315,7 +315,7 @@ export default function ProgressView({ themeToggle, timerIsland }) {
         </div>
         
         <div className="flex items-center gap-3 transition-all duration-500">
-           <div className="relative flex w-full max-w-[280px] bg-slate-300/30 dark:bg-black/30 backdrop-blur-xl p-1.5 rounded-full shadow-[inset_0_2px_8px_rgba(0,0,0,0.1)] border border-white/40 dark:border-white/5 z-0">
+           <div className="relative flex w-[280px] bg-slate-300/30 dark:bg-black/30 backdrop-blur-xl p-1.5 rounded-full shadow-[inset_0_2px_8px_rgba(0,0,0,0.1)] border border-white/40 dark:border-white/5 z-0">
              <div className="absolute top-1.5 bottom-1.5 rounded-full bg-white/90 dark:bg-white/20 shadow-md border border-white/60 dark:border-white/30 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] z-0"
                   style={{ width: 'calc(33.33% - 4px)', transform: `translateX(${['Monthly', 'Weekly', 'Daily'].indexOf(viewType) * 100}%)` }}></div>
              {['Monthly', 'Weekly', 'Daily'].map(v => (

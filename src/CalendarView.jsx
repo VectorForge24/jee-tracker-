@@ -420,7 +420,7 @@ export default function CalendarView({ themeToggle, timerIsland, syncTrigger }) 
               </div>
             )}
           </div>
-          <div className="flex gap-1 bg-white/40 dark:bg-white/10 backdrop-blur-md rounded-full p-1 shadow-sm border border-white/20 dark:border-white/5 flex">
+          <div className="flex gap-1 bg-white/40 dark:bg-white/10 backdrop-blur-md rounded-full p-1 shadow-sm border border-white/20 dark:border-white/5 hidden sm:flex">
             <button onClick={() => calendarRef.current.getApi().prev()} className="text-slate-500 hover:text-slate-800 dark:hover:text-white p-1 rounded-full transition-colors">&lt;</button>
             <button onClick={() => calendarRef.current.getApi().today()} className="text-slate-700 dark:text-slate-300 px-3 py-1 text-xs font-bold hover:bg-white/50 dark:hover:bg-slate-700/50 
             rounded-full transition-colors">Today</button>
@@ -436,7 +436,7 @@ export default function CalendarView({ themeToggle, timerIsland, syncTrigger }) 
             {['Month', 'Week', 'Day'].map((view, idx) => {
               const apiName = ['dayGridMonth', 'timeGridWeek', 'timeGridDay'][idx];
               return (
-                <button key={view} onClick={() => changeView(apiName)} className={`relative flex-1 flex justify-center items-center py-1 text-xs sm:text-sm z-10 transition-all duration-300 ${currentView === apiName ? 'text-slate-900 dark:text-white font-black drop-shadow-sm scale-105' : 'text-slate-500/60 dark:text-slate-300/50 font-bold hover:text-slate-600/80 dark:hover:text-slate-300/70'}`}>
+                <button key={view} onClick={() => changeView(apiName)} className={`relative flex-1 flex justify-center items-center py-1.5 text-sm z-10 transition-all duration-300 ${currentView === apiName ? 'text-slate-900 dark:text-white font-black drop-shadow-sm scale-105' : 'text-slate-500/60 dark:text-slate-300/50 font-bold hover:text-slate-600/80 dark:hover:text-slate-300/70'}`}>
                   {view}
                 </button>
               );
@@ -447,10 +447,10 @@ export default function CalendarView({ themeToggle, timerIsland, syncTrigger }) 
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col bg-transparent relative w-full">
+      <div className="flex-1 flex flex-col md:flex-row bg-transparent relative w-full">
         
         {/* LEFT SIDEBAR */}
-        <div className="w-full md:w-[300px] border-b md:border-b-0 md:border-r border-slate-300/40 dark:border-slate-700/50 p-4 md:p-5 flex flex-col shrink-0">
+        <div className="w-full md:w-[300px] border-b md:border-b-0 md:border-r border-slate-300/40 dark:border-slate-700/50 p-5 flex flex-col hidden md:flex shrink-0">
    
                
           <div className="mb-6 select-none shrink-0 bg-white/20 dark:bg-slate-800/30 p-4 rounded-3xl border border-white/30 dark:border-white/5 shadow-sm">
@@ -669,12 +669,12 @@ export default function CalendarView({ themeToggle, timerIsland, syncTrigger }) 
 
             /* MOBILE FIXES  */
             @media (max-width: 768px) {
-              .custom-calendar { overflow-x: hidden;
+              .custom-calendar { overflow-x: auto;
               padding-bottom: 10px; }
               /* Force min-width so tiles don't squish, and explicitly draw bottom border */
-              .fc-scrollgrid { min-width: 100% !important;
+              .fc-scrollgrid { min-width: 800px !important;
               border-bottom: 1px solid var(--fc-border-color) !important; }
-              .fc-view-harness { overflow-x: hidden !important;
+              .fc-view-harness { overflow-x: auto !important;
               -webkit-overflow-scrolling: touch; }
             }
           `}</style>
