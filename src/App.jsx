@@ -107,13 +107,38 @@ export default function App() {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const data = JSON.parse(event.target.result);
+
+        // Validate — must have at least tracker-events key
+        if (!data['tracker-events'] && !data['tracker-chapters']) {
+          alert('❌ Invalid backup file — missing tracker data.');
+          return;
+        }
+
+        // 1. Write every key to localStorage
         Object.keys(data).forEach(k => localStorage.setItem(k, data[k]));
-        alert('✅ Data Imported Successfully! App will restart.');
+
+        // 2. Immediately push to Firestore so cloud is updated
+        //    saveToDrive reads from localStorage (which we just updated above)
+        if (isLoggedIn) {
+          try {
+            await saveToDrive();
+            alert('✅ Data imported and synced to cloud! App will restart.');
+          } catch (syncErr) {
+            console.error('Sync after import failed:', syncErr);
+            alert('✅ Data imported locally! Cloud sync will happen on next change.');
+          }
+        } else {
+          alert('✅ Data Imported Successfully! App will restart.');
+        }
+
         window.location.reload();
-      } catch (err) { alert('❌ Invalid Backup File!'); }
+      } catch (err) {
+        console.error('Import error:', err);
+        alert('❌ Invalid Backup File! Make sure it is a valid JEE Tracker JSON.');
+      }
     };
     reader.readAsText(file);
   };
